@@ -6,6 +6,21 @@ import cv2
 from cv2 import aruco
 import numpy
 import math
+import numpy
+import math
+import board
+import busio
+import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
+import smbus2
+lcd_columns = 16
+lcd_rows = 2
+# Initialise I2C bus.
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Initialise the LCD class
+lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
+lcd.clear()
+bus = smbus2.SMBus(1)
 
 #define constants
 xwidth = 54 * (math.pi/180) #radians
@@ -17,7 +32,7 @@ class angle_detection():
         self.reported_angle_rads = "No Aruco Found"
         self.reported_angle_degrees = "No Aruco Found"
         self.aruco_found = "No Aruco Found"
-        self.refresh_speed = 5
+        self.refresh_speed = 300
 
     
     def initialize_camera(self):
@@ -57,18 +72,14 @@ class angle_detection():
                 self.aruco_found = "Found Aruco!"
                 #Calculate Aruco center and pixel distances to center in x and y directions
                 xcenter = int((corners[0][0][0][0]+corners[0][0][2][0])/2)
-                print("X-center",xcenter)
                 ycenter = int((corners[0][0][0][1]+corners[0][0][2][1])/2)
-                print("Y-center",ycenter)
-                print("Shape: ", image.shape)
                 xdist = abs(xcenter - image.shape[1]/2)
                 ydist = abs(ycenter - image.shape[0]/2)
-                print("Xdist", xdist)
-                print("Ydist", ydist)
+
                 xangle = (xdist/image.shape[1]) * xwidth
+                if (xcenter > 540):
+                    xangle *= -1
                 yangle = (ydist/image.shape[0]) * ywidth
-                print("Xangle: ",xangle * 180/math.pi)
-                print("Yangle: ",yangle*180/math.pi)
                 
                 # Calculate the angle from teh z-axis to the center point
                 # First calculate distance (in pixels to screen) on z-axis
@@ -81,13 +92,18 @@ class angle_detection():
                 self.reported_angle_rads = math.atan(d/a)
                 self.reported_angle_degrees = self.reported_angle_rads * (180/math.pi)
                 # Start debug
-                print(self.reported_angle_degrees)
+                print(xangle)
                 size = (int(image.shape[1] * .5), int(image.shape[0] * .5))
+                lcd.text_direction = lcd.LEFT_TO_RIGHT;
+                lcd.message =  "Beacon Detected" + "\n" + str(xangle)
                 new_img = cv2.resize(image, size)
                 cv2.imshow("Image", image)
                 cv2.imshow("Resized", new_img)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
+                newY = str(xangle)
+                newX = str(yangle)
+                
                 # End debug
                 break;
             self.rawCapture.truncate(0)
