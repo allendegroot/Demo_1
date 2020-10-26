@@ -15,6 +15,27 @@ int nSF = 12; //Status Flag Indicator
 long oldPosition  = -999;
 const float pi = 3.1415926535898;
 
+
+// Desired linear velocity for the motors
+double desiredVelocity = 1;
+double KpV = 23.34651664;
+double KiV = 0.0038853330385174;;
+double KdV = 2.5256354;
+double deltaError = 0;
+double totalVelocityError = 0;
+double previousVelocityError = 0;
+double newVelocityError = 0;
+double controlVelocitySignal = 0;
+
+// Desired linear position for the motors
+double desiredPosition = 3 * .3048;
+double KpD = 2.165965794;
+double KiD = 4.652362528;
+double totalError = 0;
+
+
+double currentPosition = 0;
+
 int data = 0;
 int toSend = 0;
 
@@ -136,34 +157,40 @@ void setup() {
 void loop() {
 
   double time = millis() / pow(10, 3);
-  double Vbar_a = 7.6;
-
-  int motorSpeed = double((Vbar_a / 15.2)) * 255;
+  double Vbar_a = 8;
+  desiredVelocity = linearDistanceController(currentPosition);
+  int motorSpeed = double((linearController(-1*velocityRight) / 15.6)) * 255;
+  if(motorSpeed > 255){
+    motorSpeed = 255;
+  }else if(motorSpeed < 0){
+    motorSpeed = 0;
+  }
   
   analogWrite(motor2Speed, motorSpeed);
   analogWrite(motor1Speed, motorSpeed);
   
 
 
-  double rhoDot = velocityRight;
+  double rhoDot = -1 * velocityRight;
 
   
 
   
 
-  Serial.print(time);
-  Serial.print("\t");
-  Serial.print(rhoDot);
+ // Serial.print(time);
+ // Serial.print("\t");
+ // Serial.print(rhoDot);
+//  Serial.print("\t");
   
 //  Serial.print(velocityLeft);
 //  Serial.print("\t");
-//  Serial.print(angVelocLeft);
+//  Serial.print(angVelocRight);
 //  Serial.print("\t");
 //  Serial.print(velocityRight * -1);
 //  Serial.print("\t");
 //  Serial.print(angVelocRight * -1);
 //  Serial.print("\t");
-  Serial.println();
+ // Serial.println();
  
 }
 
@@ -174,7 +201,7 @@ rightTimeNew = micros();
 
 //Current Right Wheel Position
 rightWheelPosNew = (2*pi*(double)countRight) / countsPerRot;
-
+currentPosition = (-1*rightWheelPosNew) * radius;
 
 //Right wheel is moving CCW
 if (digitalRead(motor1B) == digitalRead(motor1A)){
@@ -197,7 +224,6 @@ if (rightDeltaT > 0.001){
  rightTimeOld = rightTimeNew;
  
  rightWheelPosOld = rightWheelPosNew;
-  
   
 }
 
@@ -238,6 +264,50 @@ if (leftDeltaT > 0.001){
 }
 
 double linearController(double velocityRight){
+  // New error is used in the proportional term
+  float newVelocityError = desiredVelocity - velocityRight;
+  totalVelocityError += newVelocityError;
+  deltaError = newVelocityError - previousVelocityError;
+  
+  /*
+  if(int(rightDeltaT) == 0){
+    //Serial.print("here");
+    double controlVelocitySignal = (KpV*newVelocityError);
+    //Serial.print(controlVelocitySignal);
+  }else if(rightDeltaT > 0){
+    Serial.println("HEre");
+    double derivativePart = ;
+    // Calculates the new value based on the current and desired position
+    double controlVelocitySignal = (KpV*newVelocityError) + (KiV*(((double)rightTimeNew - (double)rightTimeOld)/1000000)*totalVelocityError) + derivativePart;
+  }
+  //Serial.println(controlVelocitySignal);
+  
+  
+  previousVelocityError = newVelocityError;
+  */
+  double derivativePart;
+  if(rightDeltaT < .001){
+    derivativePart = 0;
+  }else{
+    derivativePart = (KdV*deltaError) / ((rightDeltaT+10)/1000000);
+  }
+  Serial.println(derivativePart);
+  double controlVelocitySignal = (KpV*newVelocityError) + (KiV*(rightDeltaT/1000000)*totalVelocityError) + derivativePart;
+  return controlVelocitySignal;
+  
   
 }
+
+double linearDistanceController(double currentPosition){
+  // New error is used in the proportional term
+  float newDistanceError = (desiredPosition - currentPosition)+.0344;
+  // Total error is used in the integration term 
+  totalError += newDistanceError;
+  // Calculates the new value based on the current and desired position
+  double controlSignal = (KpD*newDistanceError) + (KiD*(((double)rightTimeNew - (double)rightTimeOld)/1000000)*totalError);
+  return controlSignal;
+}
+
+
+
  
