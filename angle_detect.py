@@ -73,12 +73,11 @@ class angle_detection():
                 #Calculate Aruco center and pixel distances to center in x and y directions
                 xcenter = int((corners[0][0][0][0]+corners[0][0][2][0])/2)
                 ycenter = int((corners[0][0][0][1]+corners[0][0][2][1])/2)
+                
                 xdist = abs(xcenter - image.shape[1]/2)
                 ydist = abs(ycenter - image.shape[0]/2)
 
                 xangle = (xdist/image.shape[1]) * xwidth
-                if (xcenter > 540):
-                    xangle *= -1
                 yangle = (ydist/image.shape[0]) * ywidth
                 
                 # Calculate the angle from teh z-axis to the center point
@@ -91,19 +90,19 @@ class angle_detection():
                 #Calculat the angle to z-axis using these two numbersa nd the arctangent relationship.
                 self.reported_angle_rads = math.atan(d/a)
                 self.reported_angle_degrees = self.reported_angle_rads * (180/math.pi)
+                if (xcenter > 540):
+                    self.reported_angle_rads *= -1
+                    self.reported_angle_degrees *= -1
+                    
                 # Start debug
-                print(xangle)
-                size = (int(image.shape[1] * .5), int(image.shape[0] * .5))
+                print("Angle to z-axis from Aruco Center:", self.reported_angle_degrees)
                 lcd.text_direction = lcd.LEFT_TO_RIGHT;
-                lcd.message =  "Beacon Detected" + "\n" + str(xangle)
-                new_img = cv2.resize(image, size)
+                lcd.message =  "Beacon Detected" + "\n" + str(self.reported_angle_degrees)
                 cv2.imshow("Image", image)
-                cv2.imshow("Resized", new_img)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
                 newY = str(xangle)
                 newX = str(yangle)
-                
                 # End debug
                 break;
             self.rawCapture.truncate(0)
