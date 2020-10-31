@@ -18,7 +18,7 @@ const float pi = 3.1415926535898;
 
 // Desired linear velocity for the motors
 double desiredVelocity = 1;
-double KpV = 23.34651664;
+double KpV = 5.34651664;
 double KiV = 0.0038853330385174;;
 double KdV = 2.5256354;
 double deltaError = 0;
@@ -28,7 +28,7 @@ double newVelocityError = 0;
 double controlVelocitySignal = 0;
 
 // Desired linear position for the motors
-double desiredPosition = 3 * .3048;
+double desiredPosition = 5 * .3048;
 double KpD = 2.165965794;
 double KiD = 4.652362528;
 double totalError = 0;
@@ -158,25 +158,26 @@ void loop() {
 
   double time = millis() / pow(10, 3);
   double Vbar_a = 8;
+  // Gets the requested velocity from the outer loop controller
   desiredVelocity = linearDistanceController(currentPosition);
-  int motorSpeed = double((linearController(-1*velocityRight) / 15.6)) * 255;
+  // Scales the motor value to be compatible with the pwm system
+  int motorSpeed = double((linearController(-1*velocityRight) / 15.2)) * 255;
+  // Ensures the motor value doesn't leave the allowable limits
   if(motorSpeed > 255){
     motorSpeed = 255;
   }else if(motorSpeed < 0){
     motorSpeed = 0;
   }
-  
+
+  // Sends the actual commands to the motors
   analogWrite(motor2Speed, motorSpeed);
   analogWrite(motor1Speed, motorSpeed);
   
 
 
   double rhoDot = -1 * velocityRight;
-
   
-
-  
-
+// Used for data gathering purposes
  // Serial.print(time);
  // Serial.print("\t");
  // Serial.print(rhoDot);
@@ -266,32 +267,21 @@ if (leftDeltaT > 0.001){
 double linearController(double velocityRight){
   // New error is used in the proportional term
   float newVelocityError = desiredVelocity - velocityRight;
+  // For the integral part
   totalVelocityError += newVelocityError;
+  // For the derivative part
   deltaError = newVelocityError - previousVelocityError;
-  
-  /*
-  if(int(rightDeltaT) == 0){
-    //Serial.print("here");
-    double controlVelocitySignal = (KpV*newVelocityError);
-    //Serial.print(controlVelocitySignal);
-  }else if(rightDeltaT > 0){
-    Serial.println("HEre");
-    double derivativePart = ;
-    // Calculates the new value based on the current and desired position
-    double controlVelocitySignal = (KpV*newVelocityError) + (KiV*(((double)rightTimeNew - (double)rightTimeOld)/1000000)*totalVelocityError) + derivativePart;
-  }
-  //Serial.println(controlVelocitySignal);
-  
-  
-  previousVelocityError = newVelocityError;
-  */
+ 
+  // Derivative portion of the controller
   double derivativePart;
   if(rightDeltaT < .001){
     derivativePart = 0;
   }else{
     derivativePart = (KdV*deltaError) / ((rightDeltaT+10)/1000000);
   }
-  Serial.println(derivativePart);
+  // Used for debugging purposes
+  //Serial.println(derivativePart);
+  // Calculates the value to send from the controller
   double controlVelocitySignal = (KpV*newVelocityError) + (KiV*(rightDeltaT/1000000)*totalVelocityError) + derivativePart;
   return controlVelocitySignal;
   
@@ -300,7 +290,7 @@ double linearController(double velocityRight){
 
 double linearDistanceController(double currentPosition){
   // New error is used in the proportional term
-  float newDistanceError = (desiredPosition - currentPosition)+.0344;
+  float newDistanceError = (desiredPosition - currentPosition);
   // Total error is used in the integration term 
   totalError += newDistanceError;
   // Calculates the new value based on the current and desired position
