@@ -162,14 +162,27 @@ void loop() {
 
   double time = millis() / pow(10, 3);
   double Vbar_a = 8;
+  // Gets the desired angular velocity from the closed loop controller
   desiredVelocity = rotationDistanceController(currentPosition);
+  // Gets the motor speed based on the desired velocity
+  // Also converts the value to be compatible with the PWM system
   int motorSpeed = double((rotationController(-1*velocityRight) / 15.6)) * 255;
+  // Prevents the motor value from leaving the acceptable range
   if(motorSpeed > 255){
     motorSpeed = 255;
   }else if(motorSpeed < 0){
     motorSpeed = 0;
   }
+
+  // Sends the actual commands to the motors
+  analogWrite(motor2Speed, motorSpeed);
+  analogWrite(motor1Speed, motorSpeed);
+
+
+  double rhoDot = -1 * velocityRight;
   
+// Simplified version for debugging purposes  
+/*  
   if(moveHappen == 0){
     delay(2000);
     int delayCount = (desiredAngleDegrees * 6.6071) + 57.5;
@@ -190,17 +203,10 @@ void loop() {
     analogWrite(motor1Speed, 0);
     moveHappen = 999; 
   }
+ */ 
   
   
-  
-
-
-  double rhoDot = -1 * velocityRight;
-
-  
-
-  
-
+// For data gathering purposes
  // Serial.print(time);
  // Serial.print("\t");
  // Serial.print(rhoDot);
@@ -288,24 +294,30 @@ if (leftDeltaT > 0.001){
 
 }
 
+
+// Open loop controller
 double rotationController(double velocityRight){
   // New error is used in the proportional term
   float newVelocityError = desiredVelocity - velocityRight;
+  // For the integral part
   totalVelocityError += newVelocityError;
+  // For the derivative part
   deltaError = newVelocityError - previousVelocityError;
   
   double derivativePart;
+  // Handles the derivative portion to prevent dividing by 0
   if(rightDeltaT < .001){
     derivativePart = 0;
   }else{
     derivativePart = (KdV*deltaError) / ((rightDeltaT+10)/1000000);
   }
+  // Calculates the value to send from the controller
   double controlVelocitySignal = (KpV*newVelocityError) + (KiV*(rightDeltaT/1000000)*totalVelocityError) + derivativePart;
   return controlVelocitySignal;
   
   
 }
-
+// Closed loop controller
 double rotationDistanceController(double currentPosition){
   // New error is used in the proportional term
   float newDistanceError = (desiredPosition - currentPosition);
