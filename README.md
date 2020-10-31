@@ -8,4 +8,4 @@ The CV code is contained in `aruco_detect.py`. This code is an object-oriented s
 The code for these tests are contained in a foldercalled `ArduinCode` in `demo1.ino` and in `demo1_rotation.ino`. The first of these files is used to move the robot a certain distance. The second allows the robot to be rotated a certain distance. 
 
 ### Miscellaneous Files
-The repository also contains a file named `marker1.jpg` which is just an Aruco marker that is easily accessible to anyone with repository access for testing purposes. There are also some simulink diagrams in the repo from the design of the PID controller. THese are contained in `Simulink Diagrams`.
+The repository also contains a file named `marker1.jpg` which is just an Aruco marker that is easily accessible to anyone with repository access for testing purposes. There are also some simulink diagrams in the repo from the design of the PID controller. These are contained in `Simulink Diagrams`.
